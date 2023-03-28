@@ -1,30 +1,42 @@
 package utils;
 
+import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
 import io.restassured.response.Response;
+import io.restassured.specification.RequestSpecification;
+
+import java.util.Map;
 
 import static io.restassured.RestAssured.given;
 
 public class ApiUtils {
-    public static class GetRequest {
+    private static String BASE_URI = ConfigReader.getInstance().getBaseUrl();
 
-        public Response getRequest(String route) {
-
-            return given()
-                    .baseUri(route)
-                    .when()
-                    .get();
-        }
+   public static Response get(String path) {
+        return RestAssured.given()
+                .baseUri(BASE_URI)
+                .when()
+                .get(path)
+                .then()
+                .extract()
+                .response();
     }
-    public static class PostRequest {
 
-        public Response postRequest(String baseUrl, String headerName, String headerType, String argument, Object object) {
-
-            return given().
-                    baseUri(baseUrl).
-                    header(headerName, headerType).
-                    body(object).
-                    when().
-                    post(argument);
-        }
+    public static Response post(String path, Object body, String headerName, String headerType) {
+        return RestAssured.given()
+                .baseUri(BASE_URI)
+                .header(headerName, headerType)
+                .body(body)
+                .when()
+                .post(path)
+                .then()
+                .extract()
+                .response();
+    }
+    public static RequestSpecification getRequestSpecification() {
+        return RestAssured.given()
+                .baseUri(BASE_URI);
     }
 }
+
+

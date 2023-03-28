@@ -2,6 +2,7 @@ package models;
 
 import javax.annotation.Generated;
 
+
 @Generated("jsonschema2pojo")
 public class Post {
 
@@ -30,6 +31,33 @@ public class Post {
         this.id = id;
         this.title = title;
         this.body = body;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("userId");
+        sb.append('=');
+        sb.append(((this.userId == null)?"<null>":this.userId));
+        sb.append(',');
+        sb.append("id");
+        sb.append('=');
+        sb.append(((this.id == null)?"<null>":this.id));
+        sb.append(',');
+        sb.append("title");
+        sb.append('=');
+        sb.append(((this.title == null)?"<null>":this.title));
+        sb.append(',');
+        sb.append("body");
+        sb.append('=');
+        sb.append(((this.body == null)?"<null>":this.body));
+        sb.append(',');
+        if (sb.charAt((sb.length()- 1)) == ',') {
+            sb.setCharAt((sb.length()- 1), ']');
+        } else {
+            sb.append(']');
+        }
+        return sb.toString();
     }
 
 }

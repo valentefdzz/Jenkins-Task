@@ -1,9 +1,10 @@
 package tests;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.restassured.path.json.JsonPath;
+import apiAppRequest.ApiAppRequest;
+
 import io.restassured.response.Response;
 
+import lombok.SneakyThrows;
 import models.Post;
 import models.User;
 
@@ -13,96 +14,84 @@ import org.testng.annotations.Test;
 import org.testng.asserts.SoftAssert;
 import utils.ApiUtils;
 import utils.ConfigReader;
+import utils.JsonUtils;
 
 import java.io.File;
-import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 
-public class tests {
+public class tests extends ApiAppRequest {
 
-    private static Response response;
-    private static final ApiUtils.GetRequest getApiUtils = new ApiUtils.GetRequest();
-    private static final ApiUtils.PostRequest postApiUtils = new ApiUtils.PostRequest();
-
+    private Response response;
     ConfigReader configReader = ConfigReader.getInstance();
-    ObjectMapper objectMapper = new ObjectMapper();
     SoftAssert softAssert = new SoftAssert();
 
+    @SneakyThrows
     @Test
-    public void test1(){
-        response = getApiUtils.getRequest(configReader.allPosts());
+    public void test() {
+        //FIRST TEST
+        response = ApiUtils.get(configReader.allPosts());
         softAssert.assertEquals(response.getStatusCode(), 200);
 
-
-        Post[] Posts = response.jsonPath().getObject("", Post[].class);
+        List<Post> posts = getAllPosts();
+        softAssert.assertEquals(posts.size(), 100);
 
         int i = 0;
-        for (Post post : Posts) {
+        for (Post post : posts) {
             i++;
             int id = post.id;
             softAssert.assertEquals(id, i);
         }
-    }
 
-    @Test
-    public void  test2(){
-        response = getApiUtils.getRequest(configReader.postNumber("/99"));
-        Assert.assertEquals(response.getStatusCode(), 200);
+        //SECOND TEST
+        response = ApiUtils.get(configReader.postNumber("99"));
 
-        Post actual = response.jsonPath().getObject("", Post.class);
-        Post addpost = new Post(10, 99, "", "");
+        Post actualPost = ApiAppRequest.getPost(99);
+        Post newPost = new Post(10, 99, "", "");
 
-        softAssert.assertEquals(actual.id, addpost.id);
-        softAssert.assertEquals(actual.userId, addpost.userId);
-        softAssert.assertNotEquals(actual.title, null);
-        softAssert.assertNotEquals(actual.body, null);
+        softAssert.assertEquals(actualPost.id, newPost.id);
+        softAssert.assertEquals(actualPost.userId, newPost.userId);
+        softAssert.assertNotEquals(actualPost.title, null);
+        softAssert.assertNotEquals(actualPost.body, null);
+        softAssert.assertEquals(response.getStatusCode(), 200);
 
-    }
-
-    @Test
-    public void test3(){
-        response = getApiUtils.getRequest(configReader.postNumber("/150"));
-        String body = response.body().asString();
+        //THIRD TEST
+        response = ApiUtils.get(configReader.postNumber("150"));
 
         softAssert.assertEquals(response.getStatusCode(), 404);
-        softAssert.assertEquals(body, "{}");
-    }
 
-   @Test
-    public void test4(){
-        Post newPost = new Post(1, 101, "random x", "random y");
-        Post expected = new Post(1, 101, "random x", "random y");
+        Post post = response.getBody().as(Post.class);
+        softAssert.assertEquals(post.body, null);
 
-        response = postApiUtils.postRequest(configReader.getBaseUrl(), "Content-Type", "application/json", "/posts", newPost);
-        JsonPath actual = new JsonPath(response.asString());
+        //FOURTH TEST
+        Post newPost1 = new Post(1, 101, "random x", "random y");
+        Post actualPost1 = new Post(1, 101, "random x", "random y");
 
-        response.then().statusCode(201);
-        softAssert.assertEquals(expected.body, actual.getString("body"));
-        softAssert.assertEquals(expected.title, actual.getString("title"));
-        softAssert.assertEquals(expected.id.longValue(), actual.getInt("id"));
-    }
+        response = ApiAppRequest.createPost(actualPost1);
+        actualPost1 = response.as(Post.class);
 
-    @Test
-    public void test5() throws IOException {
-        response = getApiUtils.getRequest(configReader.allUsers());
+        softAssert.assertEquals(response.getStatusCode(), 201);
+        softAssert.assertEquals(actualPost1.toString(), newPost1.toString());
+
+        //FIFTH TEST
+        response = ApiUtils.get(configReader.allUsers());
         softAssert.assertEquals(response.getStatusCode(), 200);
 
-        response = getApiUtils.getRequest(configReader.userNumber("/5"));
-
-        User actualUser = response.body().as(User.class);
-        User expectedUser = objectMapper.readValue(new File(configReader.test5route()), User.class);
+        List<User> users = ApiAppRequest.getAllUsers();
+        User actualUser = users.get(4);
+        User expectedUser = JsonUtils.readJsonFile(configReader.test5route(), User.class);
 
         softAssert.assertEquals(actualUser.toString(), expectedUser.toString());
-    }
 
-    @Test
-    public void test6() throws IOException {
-        response = getApiUtils.getRequest(configReader.userNumber("/5"));
+        //SIXTH TEST
+        response = ApiUtils.get(configReader.userNumber("5"));
 
-        User actualUser = response.getBody().as(User.class);
-        User expectedUser = objectMapper.readValue(new File(configReader.test5route()), User.class);
+        expectedUser = ApiAppRequest.getUser(5);
 
         softAssert.assertEquals(response.getStatusCode(), 200);
         softAssert.assertEquals(actualUser.toString(), expectedUser.toString());
+
+        softAssert.assertAll();
     }
 }
